@@ -1,0 +1,10 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/svu/e1554743/repo/sella",
+        "/home/svu/e1554743/repo/pyGSM",
+],
+    "python.analysis.extraPaths": [
+        "/home/svu/e1554743/repo/sella",
+        "/home/svu/e1554743/repo/pyGSM"
+    ]
+}

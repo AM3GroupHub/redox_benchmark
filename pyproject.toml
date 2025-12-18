@@ -1,0 +1,31 @@
+[project]
+name = "redox"
+version = "0.1.0"
+authors = [
+    { name = "Peichen Zhong" },
+    { name = "Yicheng Chen" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "ase>=3.26.0",
+    "rdkit-pypi>=2024.02.1",
+    "gpu4pyscf>=0.5.0",
+]
+
+[project.optional-dependencies]
+optional = [
+    "mace-torch>=0.3.0",
+    "fairchem>=0.1.0",
+]
+
+[project.scripts]
+calc_redox = "redox.scripts.calc_redox:main"
+
+[tool.setuptools]
+packages = []
+package-dir = { "" = "." }
+
+[tool.setuptools.package-data]
+scripts = ["calc_redox.py"]

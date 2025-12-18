@@ -11,17 +11,6 @@ from ase import Atoms, units
 from sella import Sella
 
 
-def write_xyz(mol: gto.Mole, filename: str) -> None:
-    elements = mol.elements
-    coords = mol.atom_coords(unit="Angstrom")
-    with open(filename, "w") as f:
-        f.write(f"{len(elements)}\n")
-        # Convert spin (2S) to multiplicity (2S+1) format, as required by quantum chemistry conventions.
-        f.write(f"charge={mol.charge} multiplicity={mol.spin + 1}\n")
-        for ele, coord in zip(elements, coords):
-            f.write(f"{ele: <2}    {coord[0]:10.6f}    {coord[1]:10.6f}    {coord[2]:10.6f}\n")
-
-
 def read_pcm_eps() -> Dict[str, float]:
     # from https://gaussian.com/scrf/
     pcm_eps_txt = os.path.join(os.path.dirname(__file__), "pcm_eps.txt")
@@ -407,22 +396,19 @@ def optimize_geometry(
     # build method
     config["charge"] = charge
     config["spin"] = spin
+    input_atoms_list = [(ele, coord) for ele, coord in zip(atoms.get_chemical_symbols(), atoms.get_positions())]
+    config["inputfile"] = input_atoms_list
     if "xc" in config and config["xc"].endswith("3c"):
         xc_3c = config["xc"]
         mf = build_3c_method(config)
     else:
         xc_3c = None
         mf = build_method(config)
-    
-    use_newton = config.get("newton", False)
-    if use_newton:
-        mf = mf.newton()
-    
+        
     # set calculator
     calc = PySCFCalculator(mf, xc_3c=xc_3c)
     atoms.calc = calc
 
-    # record start time
     # parameters for Sella
     sella_opt = Sella(
         atoms=atoms,
@@ -436,9 +422,9 @@ def optimize_geometry(
         diag_every_n=config.get("diag_every_n", None),
         hessian_function=lambda x: hessian_function(x, mf, xc_3c=xc_3c),
     )
-    energy_criteria = float(config.get("energy", 1e-6)) * units.Hartree
-    fmax_criteria = float(config.get("fmax", 4.5e-4)) * units.Hartree / units.Bohr
-    frms_criteria = float(config.get("frms", 3.0e-4)) * units.Hartree / units.Bohr
+    energy_criteria = float(config.get("energy", 1e-6 * units.Hartree))
+    fmax_criteria = float(config.get("fmax", 4.5e-4 * units.Hartree / units.Bohr))
+    frms_criteria = float(config.get("frms", 3.0e-4 * units.Hartree / units.Bohr))
     dmax_criteria = float(config.get("dmax", 1.8e-3))
     drms_criteria = float(config.get("drms", 1.2e-3))
     max_steps: int = config.get("max_steps", 1000)
@@ -503,7 +489,7 @@ def optimize_geometry(
     if num_imag > 0:
         print(f"Note: {num_imag} imaginary frequencies detected!")
     temp = config.get("temp", 298.15)
-    press = config.get("press", 1.0)
+    press = config.get("press", 101325)
     thermo_info = thermo.thermo(mf, freq_au, temp, press)
     # log thermo info
     dump_normal_mode(mf.mol, freq_info)
@@ -521,15 +507,14 @@ def run_single_point(
     # build method
     config["charge"] = charge
     config["spin"] = spin
+    input_atoms_list = [(ele, coord) for ele, coord in zip(atoms.get_chemical_symbols(), atoms.get_positions())]
+    config["inputfile"] = input_atoms_list
     if "xc" in config and config["xc"].endswith("3c"):
         mf = build_3c_method(config)
     else:
         mf = build_method(config)
     
     mf.mol.set_geom_(atoms.get_positions(), unit="Angstrom")
-    use_newton = config.get("newton", False)
-    if use_newton:
-        mf = mf.newton()
 
     e_tot = mf.kernel()
     if not mf.converged:
