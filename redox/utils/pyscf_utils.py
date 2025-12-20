@@ -383,7 +383,7 @@ def hessian_function(atoms: Atoms, method: scf.hf.SCF, xc_3c=None)-> np.ndarray:
 def optimize_geometry(
     atoms: Atoms,
     charge: int = 0,
-    spin: int = 0,
+    multiplicity: int = 1,
     config: dict = None,
     outputfile: str = "mol_opt.xyz",
 ) -> dict:
@@ -395,7 +395,7 @@ def optimize_geometry(
 
     # build method
     config["charge"] = charge
-    config["spin"] = spin
+    config["spin"] = multiplicity - 1
     input_atoms_list = [(ele, coord) for ele, coord in zip(atoms.get_chemical_symbols(), atoms.get_positions())]
     config["inputfile"] = input_atoms_list
     if "xc" in config and config["xc"].endswith("3c"):
@@ -501,12 +501,12 @@ def optimize_geometry(
 def run_single_point(
     atoms: Atoms,
     charge: int = 0,
-    spin: int = 0,
+    multiplicity: int = 1,
     config: dict = None,
 ) -> float:
     # build method
     config["charge"] = charge
-    config["spin"] = spin
+    config["spin"] = multiplicity - 1
     input_atoms_list = [(ele, coord) for ele, coord in zip(atoms.get_chemical_symbols(), atoms.get_positions())]
     config["inputfile"] = input_atoms_list
     if "xc" in config and config["xc"].endswith("3c"):

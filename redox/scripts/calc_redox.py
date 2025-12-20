@@ -46,9 +46,9 @@ def main():
     red_input = read_input(red_input_config["input"])
     # read the charge and multiplicity (here, spin = multiplicity - 1)
     ox_charge = ox_input_config.get("charge", 0)
-    ox_spin = ox_input_config.get("multiplicity", 1) - 1
+    ox_multiplicity = ox_input_config.get("multiplicity", 1)
     red_charge = red_input_config.get("charge", 0)
-    red_spin = red_input_config.get("multiplicity", 1) - 1
+    red_multiplicity = red_input_config.get("multiplicity", 1)
 
     # step2: use CREST to generate lowest energy conformer
     crest_config: dict = config.get("crest", {})
@@ -59,7 +59,7 @@ def main():
     ox_atoms = run_crest(
         ox_input,
         charge=ox_charge,
-        uhf=ox_spin,
+        uhf=ox_multiplicity - 1,
         methods=methods,
         solvation=solvation,
         solvent=solvent,
@@ -68,7 +68,7 @@ def main():
     red_atoms = run_crest(
         red_input,
         charge=red_charge,
-        uhf=red_spin,
+        uhf=red_multiplicity - 1,
         methods=methods,
         solvation=solvation,
         solvent=solvent,
@@ -79,41 +79,45 @@ def main():
     opt_config = config.get("optimization", {})
     if "xc" in opt_config:  # use DFT
         optimize_geometry = pyscf_opt
-        run_single_point = pyscf_sp
     elif "mlip" in opt_config:  # use MACE or UMA
         optimize_geometry = mlip_opt
-        run_single_point = mlip_sp
     else:
         raise ValueError("No valid optimization method specified in config.")
 
     ox_thermo_info = optimize_geometry(
         ox_atoms,
         charge=ox_charge,
-        spin=ox_spin,
+        multiplicity=ox_multiplicity,
         config=opt_config,
         outputfile=f"{ox_input.split('.')[0]}_opt.xyz",
     )
     red_thermo_info = optimize_geometry(
         red_atoms,
         charge=red_charge,
-        spin=red_spin,
+        multiplicity=red_multiplicity,
         config=opt_config,
         outputfile=f"{red_input.split('.')[0]}_opt.xyz",
     )
 
     # step4: single point energy calculation
     sp_config = config.get("single_point", None)
+    if "xc" in sp_config:  # use DFT
+        run_single_point = pyscf_sp
+    elif "mlip" in sp_config:  # use MACE or UMA
+        run_single_point = mlip_sp
+    else:
+        raise ValueError("No valid single point method specified in config.")
     if sp_config is not None:
         ox_sp = run_single_point(
             ox_atoms,
             charge=ox_charge,
-            spin=ox_spin,
+            multiplicity=ox_multiplicity,
             config=sp_config,
         )
         red_sp = run_single_point(
             red_atoms,
             charge=red_charge,
-            spin=red_spin,
+            multiplicity=red_multiplicity,
             config=sp_config,
         )
     else:  # use the energies from optimization step
@@ -127,17 +131,17 @@ def main():
         "basis": "6-31Gs",
     }
     gas_config["inputfile"] = ox_input.split('.')[0] + '_opt.xyz'
-    ox_gas_energy = run_single_point(
+    ox_gas_energy = pyscf_sp(
         ox_atoms,
         charge=ox_charge,
-        spin=ox_spin,
+        multiplicity=ox_multiplicity,
         config=gas_config,
     )
     gas_config["inputfile"] = red_input.split('.')[0] + '_opt.xyz'
-    red_gas_energy = run_single_point(
+    red_gas_energy = pyscf_sp(
         red_atoms,
         charge=red_charge,
-        spin=red_spin,
+        multiplicity=red_multiplicity,
         config=gas_config,
     )
     smd_config = gas_config.copy()
@@ -146,17 +150,17 @@ def main():
         "solvent": {"method": "SMD", "solvent": solvent},
     })
     smd_config["inputfile"] = ox_input.split('.')[0] + '_opt.xyz'
-    ox_smd_energy = run_single_point(
+    ox_smd_energy = pyscf_sp(
         ox_atoms,
         charge=ox_charge,
-        spin=ox_spin,
+        multiplicity=ox_multiplicity,
         config=smd_config,
     )
     smd_config["inputfile"] = red_input.split('.')[0] + '_opt.xyz'
-    red_smd_energy = run_single_point(
+    red_smd_energy = pyscf_sp(
         red_atoms,
         charge=red_charge,
-        spin=red_spin,
+        multiplicity=red_multiplicity,
         config=smd_config,
     )
 

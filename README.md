@@ -95,7 +95,7 @@ crest:                     # setting for CREST for conformation sampling
   threads: 16              # number of threads used for CREST
 optimization:              # setting for geometry optimization and frequency analysis
   mlip: mace               # name of MLIP
-  model_path: ./MACE-omol-0-extra-large-1024.model  # path to the model
+  model: ./MACE-omol-0-extra-large-1024.model  # path to the model
 single_point:              # setting for single point energy
   xc: wB97M-V
   basis: def2-TZVP

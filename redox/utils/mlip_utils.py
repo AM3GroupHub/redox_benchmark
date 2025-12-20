@@ -7,6 +7,10 @@ from ase import Atoms, units
 from sella import Sella
 from pyscf import gto, symm
 from pyscf.hessian import thermo
+try:
+    import torch
+except ImportError:
+    print("PyTorch not found. MLIP calculations will not work.")
 
 from redox.utils.pyscf_utils import dump_normal_mode
 
@@ -18,7 +22,6 @@ def optimize_geometry(
     config: dict,
     outputfile: str = "opt.xyz",
 ) -> dict:
-    import torch
     """Optimize geometry and calculate frequencies."""
     if config is None:
         config = {}
