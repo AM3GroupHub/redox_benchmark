@@ -25,6 +25,9 @@ calc_redox = "redox.scripts.calc_redox:main"
 mace = [
     "mace-torch>=0.3.14",
 ]
+fairchem = [
+    "fairchem>=2.12.0",
+]
 
 [tool.setuptools]
 packages = []
